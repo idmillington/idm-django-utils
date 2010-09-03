@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='django-utils',
-    version="1.0",
+    version="0.1",
     description="Ian's Django Utility Application",
-    packages=['dj_utils']
+    packages=['dj_utils', 'dj_utils.fields']
     )
