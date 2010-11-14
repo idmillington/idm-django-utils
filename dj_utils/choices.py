@@ -57,6 +57,12 @@ class Choices(object):
             for trip in choice_data
             ])
 
+    def __len__(self):
+        """
+        Returns the number of choices.
+        """
+        return len(self._choices)
+
     def __iter__(self):
         """
         Returns the iterator over the choices. This method allows
