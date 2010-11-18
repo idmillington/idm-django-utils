@@ -1,5 +1,6 @@
 import functools
 import json
+import cgi
 
 import django.http as http
 import django.shortcuts as shortcuts
@@ -33,8 +34,8 @@ def json_response(**other_data):
     """
     def _decorator(function):
         @functools.wraps(function)
-        def _wrapper(*args, **kws):
-            result = function(*args, **kws)
+        def _wrapper(request, *args, **kws):
+            result = function(request, *args, **kws)
 
             # If we get a valid response, then return it unchanged.
             if isinstance(result, http.HttpResponse): return result
@@ -46,13 +47,118 @@ def json_response(**other_data):
             # Add static data.
             result.update(other_data)
 
-            # Output as text with the correct mime.
-            json_string = json.dumps(result)
-            return http.HttpResponse(
-                json_string, content_type="application/json"
-                )
+            # Output the correct format.
+            if request.GET.get('format') == 'html':
+                # Output as debug HTML
+                response = http.HttpResponse(content_type = "text/html")
+                response.write(_JSONToHTML.before % request.path)
+                _JSONToHTML._output(response, result)
+                response.write(_JSONToHTML.after)
+                return response
+            else:
+                json_string = json.dumps(result)
+                callback = request.GET.get("callback")
+                if callback is None:
+                    # We have a vanilla JSON request
+                    return http.HttpResponse(
+                        json_string, content_type="application/json"
+                        )
+                else:
+                    # We have a JSONP request
+                    return http.HttpResponse(
+                        "%s(%s);" % (callback, json_string),
+                        content_type="application/javascript"
+                        )
         return _wrapper
     return _decorator
+
+class _JSONToHTML(object):
+    """
+    This class is just used to hide its methods.
+    """
+    @staticmethod
+    def _output(response, data):
+        if isinstance(data, list):
+            _JSONToHTML._output_array(response, data)
+        elif isinstance(data, dict):
+            _JSONToHTML._output_object(response, data)
+        elif data in (True, False):
+            _JSONToHTML._output_boolean(response, data)
+        elif isinstance(data, basestring):
+            _JSONToHTML._output_string(response, data)
+        elif data is None:
+            _JSONToHTML._output_null(response, data)
+        else:
+            _JSONToHTML._output_number(response, data)
+
+    @staticmethod
+    def _output_boolean(response, boolean):
+        response.write("<div class='boolean'>%s</div>" % str(boolean).lower())
+
+    @staticmethod
+    def _output_string(response, literal):
+        response.write(
+            "<div class='string'>\"%s\"</div>" % cgi.escape(literal)
+            )
+
+    @staticmethod
+    def _output_number(response, literal):
+        response.write("<div class='number'>%s</div>" % str(literal))
+
+    @staticmethod
+    def _output_null(response, literal):
+        response.write("<div class='null'>null</div>")
+
+    @staticmethod
+    def _output_object(response, obj):
+        response.write("<div class='object'>")
+        count = len(obj)
+        if count:
+            response.write("<table>")
+            for key, value in sorted(obj.items()):
+                response.write("<tr><th>%s:</th><td>" % cgi.escape(key))
+                _JSONToHTML._output(response, value)
+                response.write("</td></tr>")
+            response.write("</table>")
+        else:
+            response.write("{}")
+
+        response.write("</div>")
+
+    @staticmethod
+    def _output_array(response, seq):
+        response.write("<div class='array'>")
+        count = len(seq)
+        if count:
+            response.write("<table>")
+            for i, item in enumerate(seq):
+                response.write("<tr><th>%d</th><td>" % i)
+                _JSONToHTML._output(response, item)
+                response.write("</td></tr>")
+            response.write("</table>")
+        else:
+            response.write("[]")
+        response.write("</div>")
+
+    before = """<!DOCTYPE HTML><html><head><style>
+body { line-height: 16px; font-size: 14px; font-family: sans; }
+table { border: 1px solid black; background-color: white; }
+table tr { vertical-align: top; }
+.array table tr:nth-child(odd) { background-color: #dee; }
+.array table tr:nth-child(even) { background-color: #eff; }
+.object table tr:nth-child(odd) { background-color: #ede; }
+.object table tr:nth-child(even) { background-color: #fef; }
+.boolean { color: #600; }
+.string { color: #060; }
+.number { color: #009; }
+.number { color: #333; }
+th { text-align: left; padding: 2px 10px 2px 2px; font-weight: normal; }
+td { padding: 2px; }
+p { margin: 0; padding: 0; font-style: italic; color: #999 }
+.array th { font-style: italic; color: #999 }
+</style></head><body><h1>JSON Result from: %s</h1>"""
+    after = """</body></html>"""
+
 
 def template_response(templ, **other_data):
     """
