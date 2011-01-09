@@ -1,6 +1,8 @@
 """
 A more restricted slug field.
 """
+import re
+
 import django.db.models as models
 import django.forms as forms
 import django.core.validators as validators
@@ -15,10 +17,9 @@ default_error = _(
 restricted_slug_re = re.compile(r'^[-\w]+$')
 
 # This can be used in place of django.core.validators.validate_slug
-validate_resstricted_slug = RegexValidator(
-    restricted_slug_re,
-    default_error,
-    'invalid')
+validate_restricted_slug = validators.RegexValidator(
+    restricted_slug_re, default_error, 'invalid'
+    )
 
 # The slug form field that is used, by default, by the new slug field.
 class RestrictedSlugFormField(forms.SlugField):
