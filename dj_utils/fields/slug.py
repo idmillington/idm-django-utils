@@ -4,6 +4,7 @@ A more restricted slug field.
 import django.db.models as models
 import django.forms as forms
 import django.core.validators as validators
+from django.utils.translation import ugettext as _
 
 default_error = _(
     u"Slugs must consist of lower case letters, numbers and hyphens, starting "
