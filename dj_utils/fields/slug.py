@@ -31,6 +31,5 @@ class RestrictedSlugField(models.SlugField):
     def formfield(self, **kws):
         defaults = dict(form_class=RestrictedSlugFormField)
         defaults.update(kws)
-        print defaults
         return super(RestrictedSlugField, self).formfield(**defaults)
 
