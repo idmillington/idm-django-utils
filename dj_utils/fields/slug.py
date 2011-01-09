@@ -14,7 +14,7 @@ default_error = _(
     )
 
 # This can be used in place of django.core.validators.slug_re
-restricted_slug_re = re.compile(r'^[-\w]+$')
+restricted_slug_re = re.compile(r'^[a-z](|[-0-9a-z]*[0-9a-z])$')
 
 # This can be used in place of django.core.validators.validate_slug
 validate_restricted_slug = validators.RegexValidator(
@@ -31,5 +31,6 @@ class RestrictedSlugField(models.SlugField):
     def formfield(self, **kws):
         defaults = dict(form_class=RestrictedSlugFormField)
         defaults.update(kws)
+        print defaults
         return super(RestrictedSlugField, self).formfield(**defaults)
 
