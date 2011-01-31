@@ -26,6 +26,7 @@ def method_required(*methods):
 POST_required = method_required('POST')
 GET_required = method_required('GET')
 PUT_required = method_required('PUT')
+POST_or_PUT_required = method_required('POST', 'PUT')
 
 # Response types
 def json_response(**other_data):
@@ -44,13 +45,21 @@ def json_response(**other_data):
             if result is None: result = dict()
             if 'ok' not in result: result['ok'] = True
 
+            # Find the status code.
+            status = result.get('status')
+            if status:
+                del result['status']
+
             # Add static data.
             result.update(other_data)
 
             # Output the correct format.
             if request.GET.get('format') == 'html':
                 # Output as debug HTML
-                response = http.HttpResponse(content_type = "text/html")
+                response = http.HttpResponse(
+                    content_type="text/html",
+                    status=status
+                    )
                 response.write(_JSONToHTML.before % request.path)
                 _JSONToHTML._output(response, result)
                 response.write(_JSONToHTML.after)
@@ -61,13 +70,16 @@ def json_response(**other_data):
                 if callback is None:
                     # We have a vanilla JSON request
                     return http.HttpResponse(
-                        json_string, content_type="application/json"
+                        json_string,
+                        content_type="application/json",
+                        status=status
                         )
                 else:
                     # We have a JSONP request
                     return http.HttpResponse(
                         "%s(%s);" % (callback, json_string),
-                        content_type="application/javascript"
+                        content_type="application/javascript",
+                        status=status
                         )
         return _wrapper
     return _decorator
