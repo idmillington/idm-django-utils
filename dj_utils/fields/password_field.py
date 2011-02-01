@@ -1,6 +1,7 @@
-import random
+import uuid
 import hashlib
 
+import django.forms as forms
 from django.db import models
 import django.contrib.auth.models as auth_models
 
@@ -26,9 +27,7 @@ class PasswordField(models.CharField):
             Encrypts and sets the password.
             """
             algorithm = 'sha1'
-            salt = auth_models.get_hexdigest(
-                algorithm, str(random.random()), str(random.random())
-                )[:5]
+            salt = str(uuid.uuid4())
             hsh = auth_models.get_hexdigest(algorithm, salt, raw_password)
             setattr(
                 model_instance, self.attname,
@@ -39,10 +38,19 @@ class PasswordField(models.CharField):
             """
             Checks the password against the given content.
             """
-            return auth_models.check_password(
-                raw_password,
-                getattr(model_instance, self.attname, None)
-                )
+            current = getattr(model_instance, self.attname, None)
+            if not current:
+                return not raw_password
+            else:
+                return auth_models.check_password(raw_password, current)
 
         setattr(cls, 'set_%s' % self.name, set_password)
         setattr(cls, 'check_%s' % self.name, check_password)
+
+    def formfield(self, **kwargs):
+        """
+        Returns a CharField with the PasswordInput widget.
+        """
+        defaults = {'widget': forms.PasswordInput}
+        defaults.update(kwargs)
+        return super(PasswordField, self).formfield(**defaults)
