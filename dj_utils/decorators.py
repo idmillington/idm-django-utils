@@ -1,3 +1,5 @@
+import sys
+import traceback
 import functools
 import json
 import cgi
@@ -195,3 +197,25 @@ def template_response(templ, **other_data):
                 )
         return _wrapper
     return _decorator
+
+
+def report_errors(fn):
+    """
+    If an error occurs in the given fn, it will be printed as well as
+    raising a 500 or 404. This is useful when you're dealing with API
+    functions called from Ajax, where the error report is not
+    displayed in HTML. It is redundant in non-debug mode.
+    """
+    # Early out if we're not in debug mode.
+    import settings
+    if not settings.DEBUG: return fn
+
+    def _wrapper(request, *args, **kws):
+        print "Wrapped"
+        try:
+            return fn(request, *args, **kws)
+        except BaseException as err:
+            print "Error"
+            traceback.print_exc(file=sys.stderr)
+    return _wrapper
+
