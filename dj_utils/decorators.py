@@ -211,11 +211,9 @@ def report_errors(fn):
     if not settings.DEBUG: return fn
 
     def _wrapper(request, *args, **kws):
-        print "Wrapped"
         try:
             return fn(request, *args, **kws)
         except BaseException as err:
-            print "Error"
             traceback.print_exc(file=sys.stderr)
     return _wrapper
 
