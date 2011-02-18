@@ -207,7 +207,7 @@ def report_errors(fn):
     displayed in HTML. It is redundant in non-debug mode.
     """
     # Early out if we're not in debug mode.
-    import settings
+    from django.conf import settings
     if not settings.DEBUG: return fn
 
     def _wrapper(request, *args, **kws):
