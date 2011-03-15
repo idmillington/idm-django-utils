@@ -213,7 +213,7 @@ def report_errors(fn):
     def _wrapper(request, *args, **kws):
         try:
             return fn(request, *args, **kws)
-        except BaseException as err:
+        except BaseException, err:
             traceback.print_exc(file=sys.stderr)
     return _wrapper
 
