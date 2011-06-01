@@ -37,6 +37,10 @@ class JSONField(models.Field):
             return dbsafe_encode(getattr(model_instance, self.attname, None))
         setattr(cls, 'get_%s_raw' % self.name, get_raw)
 
+        def get_json(model_instance):
+            return json.dumps(getattr(model_instance, self.attname, None))
+        setattr(cls, 'get_%s_json' % self.name, get_json)
+
     def get_default(self):
         """
         Returns the default value for this field without forcing
