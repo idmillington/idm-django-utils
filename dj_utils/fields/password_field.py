@@ -54,3 +54,19 @@ class PasswordField(models.CharField):
         defaults = {'widget': forms.PasswordInput}
         defaults.update(kwargs)
         return super(PasswordField, self).formfield(**defaults)
+
+# If we're using south for schema migration, then register this field.
+try:
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules(
+        [(
+                [PasswordField],
+                [],
+                {
+                    "algorithm": ("algorithm", {"default":"sha1"})
+                }
+        )],
+        ["^dj_utils\.fields\.password_field\.PasswordField"]
+        )
+except ImportError:
+    pass

@@ -57,7 +57,7 @@ def dbsafe_decode(value, compress_object=False):
         value = loads(decompress(b64decode(value)))
     return value
 
-class PickledObjectField(models.Field):
+class PickledObjectField(models.TextField):
     """
     A field that will accept *any* python object and store it in the
     database. PickledObjectField will optionally compress it's values
@@ -82,14 +82,18 @@ class PickledObjectField(models.Field):
 
     def contribute_to_class(self, cls, name):
         """
-        Add the ability to get the raw JSON strings.
+        Add the ability to get the raw pickle strings.
         """
         self.class_name = cls
-        super(JSONField, self).contribute_to_class(cls, name)
+        super(PickledObjectField, self).contribute_to_class(cls, name)
 
         def get_raw(model_instance):
             return dbsafe_encode(getattr(model_instance, self.attname, None))
         setattr(cls, 'get_%s_raw' % self.name, get_json)
+
+        def get_pickle(model_instance):
+            return dumps(getattr(model_instance, self.attname, None))
+        setattr(cls, 'get_%s_pickle' % self.name, get_pickle)
 
     def get_default(self):
         """
@@ -156,9 +160,6 @@ class PickledObjectField(models.Field):
         value = self._get_val_from_obj(obj)
         return self.get_db_prep_value(value)
 
-    def get_internal_type(self):
-        return 'TextField'
-
     def get_db_prep_lookup(self, lookup_type, value):
         if lookup_type not in ['exact', 'in', 'isnull']:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
@@ -167,3 +168,12 @@ class PickledObjectField(models.Field):
         return super(PickledObjectField, self).get_db_prep_lookup(
             lookup_type, value
             )
+
+# If we're using south for schema migration, then register this field.
+try:
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules(
+        [], ["^dj_utils\.fields\.pickle_field\.PICKLEField"]
+        )
+except ImportError:
+    pass

@@ -18,7 +18,7 @@ def dbsafe_decode(value, compress_object=False):
 class JSONObject(str):
     pass
 
-class JSONField(models.Field):
+class JSONField(models.TextField):
     __metaclass__ = models.SubfieldBase
 
     def __init__(self, *args, **kwargs):
@@ -77,12 +77,18 @@ class JSONField(models.Field):
         value = self._get_val_from_obj(obj)
         return self.get_db_prep_value(value)
 
-    def get_internal_type(self):
-        return 'TextField'
-
     def get_db_prep_lookup(self, lookup_type, value):
         if lookup_type not in ['exact', 'in', 'isnull']:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
         # The Field model already calls get_db_prep_value before doing the
         # actual lookup, so all we need to do is limit the lookup types.
         return super(JSONField, self).get_db_prep_lookup(lookup_type, value)
+
+# If we're using south for schema migration, then register this field.
+try:
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules(
+        [], ["^dj_utils\.fields\.json_field\.JSONField"]
+        )
+except ImportError:
+    pass

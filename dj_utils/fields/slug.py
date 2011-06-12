@@ -39,3 +39,11 @@ class RestrictedSlugField(models.SlugField):
         defaults.update(kws)
         return super(RestrictedSlugField, self).formfield(**defaults)
 
+# If we're using south for schema migration, then register this field.
+try:
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules(
+        [], ["^dj_utils\.fields\.slug\.RestrictedSlugField"]
+        )
+except ImportError:
+    pass

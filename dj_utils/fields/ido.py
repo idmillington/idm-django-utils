@@ -65,7 +65,9 @@ class IdObfuscator(object):
         # inputs, but when we are dealing with incrementing values,
         # this is a better solution.
         xors.reverse()
-        return IdObfuscator(xors)
+        ido = IdObfuscator(xors)
+        ido.seed = seed
+        return ido
 
     def __init__(self, xors, code_chars=None):
         """
@@ -206,3 +208,22 @@ class ObfuscatedIdField(models.CharField):
 
             # Do another save to save the oid.
             instance.save(using=kws.get('using'))
+
+
+# If we're using south for schema migration, then register this field.
+try:
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules(
+        [(
+                [ObfuscatedIdField],
+                [],
+                {
+                    "seed": ("ido.seed", {}),
+                    "bits": ("ido.bits", {}),
+                    "source_field": ("source_field", {"default":"id"})
+                }
+        )],
+        ["^dj_utils\.fields\.ido\.ObfuscatedIdField"]
+        )
+except ImportError:
+    pass
