@@ -1,3 +1,5 @@
+import collections
+
 class Choices(object):
     """
     A class that can act as a set of choices for a Django model, but
@@ -34,7 +36,8 @@ class Choices(object):
             if 'sort' in kws:
                 sort = kws['sort']
                 del kws['sort']
-            if sort: choice_data.sort()
+            if sort:
+                choice_data = sorted(choice_data)
 
         # Any other keyword argument we ignore.
         if kws:
@@ -52,10 +55,15 @@ class Choices(object):
         self._val2str = dict([(trip[0], trip[2]) for trip in choice_data])
 
         # Additional data.
-        self._val2data = dict([
-            (trip[0], trip[3] if len(trip) > 3 else dict())
-            for trip in choice_data
-            ])
+        self._val2data = dict()
+        self._data2val = collections.defaultdict(dict)
+        for trip in choice_data:
+            if len(trip) > 3:
+                self._val2data[trip[0]] = trip[3]
+                for key, val in trip[3].items():
+                    self._data2val[key][val] = trip[0]
+            else:
+                self._val2data[trip[0]] = dict()
 
     def __len__(self):
         """
@@ -98,3 +106,9 @@ class Choices(object):
         Returns a piece of additional data for the given data.
         """
         return self._val2data[value].get(data_type, default)
+
+    def data_to_value(self, data_type, data_value, default=None):
+        """
+        Returns the value for a piece of additional data.
+        """
+        return self._data2val[data_type].get(data_value, default)
