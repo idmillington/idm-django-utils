@@ -69,7 +69,6 @@ class PickledObjectField(models.TextField):
     this, the field defaults to ``null=True``, as otherwise it
     wouldn't be able to store None values since they aren't pickled
     and encoded.
-
     """
     __metaclass__ = models.SubfieldBase
 
@@ -84,12 +83,11 @@ class PickledObjectField(models.TextField):
         """
         Add the ability to get the raw pickle strings.
         """
-        self.class_name = cls
         super(PickledObjectField, self).contribute_to_class(cls, name)
 
         def get_raw(model_instance):
             return dbsafe_encode(getattr(model_instance, self.attname, None))
-        setattr(cls, 'get_%s_raw' % self.name, get_json)
+        setattr(cls, 'get_%s_raw' % self.name, get_raw)
 
         def get_pickle(model_instance):
             return dumps(getattr(model_instance, self.attname, None))
@@ -105,7 +103,6 @@ class PickledObjectField(models.TextField):
         without calling force_unicode on it. Note that if you set a
         callable as a default, the field will still call it. It will
         *not* try to pickle and encode it.
-
         """
         if self.has_default():
             if callable(self.default):
@@ -122,7 +119,6 @@ class PickledObjectField(models.TextField):
         is a definite pickle, the error is allowed to propogate. If we
         aren't sure if the value is a pickle or not, then we catch the
         error and return the original value instead.
-
         """
         if value is not None:
             try:
@@ -143,7 +139,6 @@ class PickledObjectField(models.TextField):
         the protocol to change over time. If it did, ``exact`` and
         ``in`` lookups would likely fail, since pickle would now be
         generating a different string.
-
         """
         if value is not None and not isinstance(value, PickledObject):
             # We call force_unicode here explicitly, so that the
@@ -173,7 +168,7 @@ class PickledObjectField(models.TextField):
 try:
     from south.modelsinspector import add_introspection_rules
     add_introspection_rules(
-        [], ["^dj_utils\.fields\.pickle_field\.PICKLEField"]
+        [], ["^dj_utils\.fields\.pickle_field\.PickleField"]
         )
 except ImportError:
     pass

@@ -30,7 +30,6 @@ class JSONField(models.TextField):
         """
         Add the ability to get the raw JSON strings.
         """
-        self.class_name = cls
         super(JSONField, self).contribute_to_class(cls, name)
 
         def get_raw(model_instance):
