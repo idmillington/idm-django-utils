@@ -144,6 +144,10 @@ class ObfuscatedIdField(models.CharField):
         bits = kws['bits']
         self.source_field = kws.get('source_field', 'id')
         self.ido = IdObfuscator.create_from_seed(bits, kws['seed'])
+        if 'code_chars' in kws:
+            chars = kws['code_chars']
+            assert len(chars) == 32, "Must have 32 characters for encoding."
+            self.ido.code_chars = chars
 
         # Force certain CharField properties.
         max_length = int((bits+4)//5)
@@ -158,6 +162,7 @@ class ObfuscatedIdField(models.CharField):
         del kws['bits']
         del kws['seed']
         if 'source_field' in kws: del kws['source_field']
+        if 'code_chars' in kws: del kws['code_chars']
 
         # Delegate to create the field.
         models.CharField.__init__(self, *args, **kws)
