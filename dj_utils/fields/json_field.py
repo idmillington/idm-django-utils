@@ -64,7 +64,7 @@ class JSONField(models.TextField):
                     raise
         return value
 
-    def get_db_prep_value(self, value):
+    def get_db_prep_value(self, value, *args, **kws):
         """
         JSON and b64encode the object.
         """
@@ -76,12 +76,14 @@ class JSONField(models.TextField):
         value = self._get_val_from_obj(obj)
         return self.get_db_prep_value(value)
 
-    def get_db_prep_lookup(self, lookup_type, value):
+    def get_db_prep_lookup(self, lookup_type, value, *args, **kws):
         if lookup_type not in ['exact', 'in', 'isnull']:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
         # The Field model already calls get_db_prep_value before doing the
         # actual lookup, so all we need to do is limit the lookup types.
-        return super(JSONField, self).get_db_prep_lookup(lookup_type, value)
+        return super(JSONField, self).get_db_prep_lookup(
+            lookup_type, value, *args, **kws
+            )
 
 # If we're using south for schema migration, then register this field.
 try:
