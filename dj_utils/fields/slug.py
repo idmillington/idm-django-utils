@@ -14,12 +14,12 @@ from django.utils.translation import ugettext as _
 
 default_error = _(
     u"Slugs must consist of lower case letters, numbers and hyphens, starting "
-    u"with a letter, and ending with a letter or a number. The slug may not "
+    u"and ending with a letter or a number. The slug may not "
     u"contain two or more consecutive hyphens."
     )
 
 # This can be used in place of django.core.validators.slug_re
-restricted_slug_re_raw = r'[a-z][a-z0-9]*(-[0-9a-z]+)'
+restricted_slug_re_raw = r'[a-z0-9]+(-[0-9a-z]+)'
 restricted_slug_re = re.compile('^'+restricted_slug_re_raw+'*$')
 
 # This can be used in place of django.core.validators.validate_slug
