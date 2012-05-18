@@ -5,6 +5,15 @@ import django.forms as forms
 from django.db import models
 import django.contrib.auth.models as auth_models
 
+# Django 1.3 used a get_hexdigest method for password settiing and
+# checking, in 1.4 it moved to pluggable hashing, we need to behave
+# differently in each case.
+try:
+    from django.contrib.auth.models import get_hexdigest, check_password
+except ImportError:
+    get_hexdigest = None
+    from django.contrib.auth.hashers import make_password, check_password
+
 class PasswordField(models.CharField):
     """
     A field for storing passwords, where the passwords are stored
@@ -28,11 +37,14 @@ class PasswordField(models.CharField):
             """
             algorithm = 'sha1'
             salt = str(uuid.uuid4())
-            hsh = auth_models.get_hexdigest(algorithm, salt, raw_password)
-            setattr(
-                model_instance, self.attname,
-                "%s$%s$%s" % (algorithm, salt, hsh)
-                )
+            if get_hexdigest:
+                hsh = get_hexdigest(algorithm, salt, raw_password)
+                dbvalue = "%s$%s$%s" % (algorithm, salt, hsh)
+            else:
+                # We don't force salt or algorithm, because they are
+                # derived from the project settings in 1.4
+                dbvalue = make_password(raw_password)
+            setattr(model_instance, self.attname, dbvalue)
 
         def check_password(model_instance, raw_password):
             """
